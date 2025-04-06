@@ -1,6 +1,6 @@
 FROM php:8.1-apache
 
-# Install system packages and PHP extensions
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -17,11 +17,10 @@ RUN apt-get update && apt-get install -y \
     pdo_sqlite \
     zip \
     bcmath \
-    tokenizer \
-    xml \
-    mbstring
+    mbstring \
+    xml
 
-# Enable Apache mod_rewrite
+# Enable Apache rewrite module
 RUN a2enmod rewrite
 
 # Install Composer
@@ -30,13 +29,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy app files
+# Copy project files
 COPY . .
 
 # Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader || true
 
-# Set the web root to the public directory
+# Set Laravel public directory as Apache web root
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
 # Rewrite Apache configs to point to /public
@@ -45,7 +44,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/apache2.conf \
     /etc/apache2/conf-available/*.conf
 
-# Expose port
+# Expose web port
 EXPOSE 80
 
 # Launch Apache
