@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Install dependencies and PHP extensions
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -20,32 +20,21 @@ RUN apt-get update && apt-get install -y \
     mbstring \
     xml
 
-# Enable Apache mod_rewrite
+# Enable mod_rewrite
 RUN a2enmod rewrite
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
 COPY . .
 
-# Set permissions (important on Render)
-RUN chown -R www-data:www-data /var/www/html
+# Laravel folders need correct permissions
+RUN chown -R www-data:www-data /var/www/html && chmod -R 775 storage bootstrap/cache
 
-# Install Composer dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Move public files to web root (Apache serves from here)
+RUN cp -r public/* . && rm -rf public
 
-# Laravel needs the storage and bootstrap/cache folders to be writable
-RUN chmod -R 775 storage bootstrap/cache
-
-# Copy Laravel's /public content to Apache root to avoid 403 errors on Render
-RUN cp -r public/* .
-
-# Expose web port
-EXPOSE 80
-
-# Start Apache
-CMD ["apache2-foreground"]
+# 🔥 Composer install will run every time the container starts, ensuring vendor is always there
+CMD composer install --no-dev --optimize-autoloader && apache2-foreground
