@@ -36,7 +36,7 @@ COPY . .
 RUN chown -R www-data:www-data /var/www/html
 
 # Install Composer dependencies
-RUN composer install --no-dev --optimize-autoloader || true
+RUN composer install --no-dev --optimize-autoloader
 
 # Laravel needs the storage and bootstrap/cache folders to be writable
 RUN chmod -R 775 storage bootstrap/cache
